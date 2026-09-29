@@ -810,6 +810,53 @@ export function CompanyDetailPage() {
 
       {isResearching && <ResearchProgress companyId={id!} />}
 
+      {/* BRD §10.5 — Failure states */}
+      {company.researchStatus === 'failed' && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 20,
+            borderColor: 'rgba(248, 113, 113, 0.3)',
+            background: 'rgba(248, 113, 113, 0.04)',
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#f87171', marginBottom: 4 }}>
+                Research could not be completed for this company.
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                The site may be unavailable or blocked. Retry to attempt again.
+              </div>
+            </div>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => refreshMutation.mutate()}
+              disabled={refreshMutation.isPending}
+            >
+              {refreshMutation.isPending ? <><span className="spinner" /> Retrying...</> : 'Retry Research'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {company.researchStatus === 'partial' && (
+        <div
+          style={{
+            marginBottom: 20,
+            padding: '8px 14px',
+            borderRadius: 'var(--radius-sm)',
+            background: 'rgba(251, 191, 36, 0.05)',
+            border: '1px solid rgba(251, 191, 36, 0.2)',
+            fontSize: 13,
+            color: '#fbbf24',
+          }}
+        >
+          Research completed with limited source coverage — some pages were unavailable. Results may be incomplete.
+        </div>
+      )}
+
+
       <div className="tabs">
         {tabs.map((tab) => (
           <button

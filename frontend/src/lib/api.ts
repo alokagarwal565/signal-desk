@@ -129,6 +129,9 @@ export const api = {
   getDashboard: () =>
     request<{ items: DashboardItem[]; generatedAt: string }>('/api/dashboard/today'),
 
+  getDashboardMetrics: () =>
+    request<{ metrics: DashboardMetrics }>('/api/dashboard/metrics'),
+
   // Feedback
   sendFeedback: (data: { companyId?: string; targetType: string; targetId?: string; rating: string; comment?: string }) =>
     request<{ feedback: unknown }>('/api/feedback', {
@@ -301,4 +304,19 @@ export interface DashboardItem {
     whyRelevant: string | null;
   } | null;
   recommendedAction: string | null;
+}
+
+export interface DashboardMetrics {
+  companies: {
+    total: number;
+    byStatus: Record<string, number>;
+  };
+  feedback: {
+    total: number;
+    useful: number;
+    notUseful: number;
+    actionRate: number | null;
+  };
+  outreachDraftsGenerated: number;
+  opportunitiesScored: number;
 }

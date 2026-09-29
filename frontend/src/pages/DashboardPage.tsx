@@ -233,12 +233,54 @@ export function DashboardPage() {
     refetchInterval: 30_000,
   });
 
+  const { data: metricsData } = useQuery({
+    queryKey: ['dashboard-metrics'],
+    queryFn: api.getDashboardMetrics,
+    refetchInterval: 60_000,
+  });
+
+  const m = metricsData?.metrics;
+
   return (
     <div>
       <div className="page-header">
         <h1>What should I act on today?</h1>
         <p>Top opportunities ranked by evidence, signals, and timing</p>
       </div>
+
+      {/* BRD §7.7 — Product metrics bar */}
+      {m && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 20,
+            padding: '10px 16px',
+            display: 'flex',
+            gap: 24,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            <strong style={{ color: 'var(--text-secondary)' }}>{m.companies.total}</strong> companies
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            <strong style={{ color: 'var(--text-secondary)' }}>{m.opportunitiesScored}</strong> scored
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            <strong style={{ color: 'var(--text-secondary)' }}>{m.outreachDraftsGenerated}</strong> drafts
+          </span>
+          {m.feedback.actionRate !== null && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Recommendation usefulness:{' '}
+              <strong style={{ color: m.feedback.actionRate >= 70 ? '#34d399' : m.feedback.actionRate >= 40 ? '#fbbf24' : '#f87171' }}>
+                {m.feedback.actionRate}%
+              </strong>
+              {' '}({m.feedback.total} ratings)
+            </span>
+          )}
+        </div>
+      )}
 
       {isLoading && (
         <div className="empty-state">
