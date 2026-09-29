@@ -40,6 +40,18 @@ const confidenceSchema = z.union([z.string(), z.number()]).transform((val): 'hig
   return 'unknown';
 }).default('unknown');
 
+const conflictingClaimSchema = z.array(z.union([
+  z.object({
+    field: z.string(),
+    sourceA: z.string(),
+    valueA: z.string(),
+    sourceB: z.string(),
+    valueB: z.string(),
+    resolution: z.string().optional(),
+  }),
+  z.string().transform((s) => ({ field: s, sourceA: 'unknown', valueA: '', sourceB: 'unknown', valueB: '', resolution: undefined })),
+])).optional().default([]);
+
 const intelligenceSchema = z.object({
   companyName: flexibleString('Unknown Company'),
   summary: flexibleString(''),
@@ -63,6 +75,7 @@ const intelligenceSchema = z.object({
     }),
     z.string().transform((s) => ({ fact: s, source: 'website' })),
   ])).optional().default([]),
+  conflictingClaims: conflictingClaimSchema,
   confidence: confidenceSchema,
 });
 
@@ -101,7 +114,7 @@ RULES:
 - Be concise and factual.
 
 Return a JSON object with the following fields:
-companyName, summary, industry, productsServices (array), businessModel, targetCustomers, geographies (array), companySizeIndicators, growthSignals (array), recentDevelopments (array), partnershipSignals (array), hiringSignals (array), leadershipSignals (array), potentialOpportunity, potentialRisks (array), keyEvidence (array of {fact, source}), confidence.`,
+companyName, summary, industry, productsServices (array), businessModel, targetCustomers, geographies (array), companySizeIndicators, growthSignals (array), recentDevelopments (array), partnershipSignals (array), hiringSignals (array), leadershipSignals (array), potentialOpportunity, potentialRisks (array), keyEvidence (array of {fact, source}), conflictingClaims (array of {field, sourceA, valueA, sourceB, valueB, resolution} — only include when sources actively disagree on the same fact), confidence.`,
       },
       {
         role: 'user',

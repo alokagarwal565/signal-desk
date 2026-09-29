@@ -115,6 +115,10 @@ export const api = {
   getChanges: (companyId: string) =>
     request<{ changes: Change[] }>(`/api/companies/${companyId}/changes`),
 
+  // Sources
+  getSources: (companyId: string) =>
+    request<{ sources: Source[] }>(`/api/companies/${companyId}/sources`),
+
   // Refresh
   refreshCompany: (companyId: string) =>
     request<{ jobId: string; status: string }>(`/api/companies/${companyId}/refresh`, {
@@ -259,6 +263,15 @@ export interface Change {
   actionability: string | null;
   recommendedAction: string | null;
   detectedAt: string;
+}
+
+export interface Source {
+  id: string;
+  sourceUrl: string;
+  sourceType: string;
+  title: string | null;
+  authority: string;
+  retrievedAt: string;
 }
 
 export interface DashboardItem {

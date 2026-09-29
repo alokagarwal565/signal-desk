@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, type Person } from '../lib/api';
+import { api, type Person, type Source } from '../lib/api';
 import { CompanyLogo } from '../components/CompanyLogo';
 
-type Tab = 'overview' | 'signals' | 'opportunity' | 'people' | 'outreach' | 'history';
+type Tab = 'overview' | 'signals' | 'opportunity' | 'people' | 'outreach' | 'history' | 'sources';
 
 function scoreClass(score: number): string {
   if (score >= 70) return 'high';
@@ -146,6 +146,34 @@ function OverviewTab({ companyId }: { companyId: string }) {
               <div key={i} style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)', fontSize: 13 }}>
                 <span style={{ color: 'var(--text-primary)' }}>{e.fact}</span>
                 {e.source && <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: 11 }}>— {e.source}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* BRD §18.5 — Conflicting claims surface */}
+      {Array.isArray((d as Record<string, unknown>).conflictingClaims) &&
+        ((d as Record<string, unknown>).conflictingClaims as {field: string; sourceA: string; valueA: string; sourceB: string; valueB: string; resolution?: string}[]).length > 0 && (
+        <div className="card" style={{ borderColor: 'rgba(251, 191, 36, 0.25)' }}>
+          <div className="card-title mb-3" style={{ color: '#fbbf24' }}>⚠ Conflicting Source Information</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {((d as Record<string, unknown>).conflictingClaims as {field: string; sourceA: string; valueA: string; sourceB: string; valueB: string; resolution?: string}[]).map((c, i) => (
+              <div key={i} style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(251, 191, 36, 0.05)', fontSize: 13 }}>
+                <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text-primary)' }}>{c.field}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div style={{ color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: 11, marginBottom: 2 }}>{c.sourceA}</div>
+                    <div style={{ color: 'var(--text-secondary)' }}>{c.valueA || '—'}</div>
+                  </div>
+                  <div style={{ color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: 11, marginBottom: 2 }}>{c.sourceB}</div>
+                    <div style={{ color: 'var(--text-secondary)' }}>{c.valueB || '—'}</div>
+                  </div>
+                </div>
+                {c.resolution && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: '#fbbf24' }}>Resolution: {c.resolution}</div>
+                )}
               </div>
             ))}
           </div>
@@ -475,11 +503,30 @@ function OutreachTab({ companyId }: { companyId: string }) {
       {draft && (
         <div>
           {draft.context && (
-            <div style={{ marginBottom: 16, fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'pre-line' }}>
-              {draft.context}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Personalisation Context
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'pre-line', padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)', lineHeight: 1.6 }}>
+                {draft.context}
+              </div>
             </div>
           )}
           <div className="outreach-message">{draft.message}</div>
+          <div
+            style={{
+              marginTop: 12,
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'rgba(251, 191, 36, 0.06)',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              fontSize: 12,
+              color: '#fbbf24',
+              lineHeight: 1.5,
+            }}
+          >
+            ⚠ Review before sending — verify all claims against real company information. This draft uses AI-generated language grounded in scraped evidence; some details may be outdated or inferred.
+          </div>
           <div className="flex items-center justify-between mt-4">
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               Version {draft.version} · {new Date(draft.createdAt).toLocaleString()}
@@ -496,6 +543,120 @@ function OutreachTab({ companyId }: { companyId: string }) {
           {mutation.error instanceof Error ? mutation.error.message : 'Failed to generate outreach'}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Sources Tab ────────────────────────────────
+
+const AUTHORITY_LABELS: Record<string, { label: string; color: string }> = {
+  first_party: { label: 'First Party', color: '#34d399' },
+  official_announcement: { label: 'Official', color: '#60a5fa' },
+  established_publication: { label: 'Publication', color: '#a78bfa' },
+  third_party_database: { label: '3rd Party DB', color: '#fbbf24' },
+  unverified: { label: 'Unverified', color: '#9494a8' },
+};
+
+function SourceRow({ source }: { source: Source }) {
+  const auth = AUTHORITY_LABELS[source.authority] || AUTHORITY_LABELS['unverified']!;
+  const ageH = Math.floor(
+    (Date.now() - new Date(source.retrievedAt).getTime()) / (1000 * 60 * 60)
+  );
+  const freshness = ageH < 24 ? 'Fresh' : ageH < 168 ? 'Aging' : 'Stale';
+  const freshnessColor = freshness === 'Fresh' ? '#34d399' : freshness === 'Aging' ? '#fbbf24' : '#f87171';
+
+  let hostname = source.sourceUrl;
+  try { hostname = new URL(source.sourceUrl).hostname; } catch { /* noop */ }
+
+  return (
+    <div className="card" style={{ padding: '12px 16px' }}>
+      <div className="flex items-start justify-between gap-3">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+            {source.title || hostname}
+          </div>
+          <a
+            href={source.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 12, color: 'var(--text-muted)', wordBreak: 'break-all' }}
+          >
+            {source.sourceUrl}
+          </a>
+        </div>
+        <div className="flex items-center gap-2" style={{ flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <span
+            style={{
+              fontSize: 11, padding: '2px 8px', borderRadius: 'var(--radius-full)',
+              background: `${auth.color}18`, color: auth.color, fontWeight: 600,
+            }}
+          >
+            {auth.label}
+          </span>
+          <span
+            style={{
+              fontSize: 11, padding: '2px 8px', borderRadius: 'var(--radius-full)',
+              background: `${freshnessColor}12`, color: freshnessColor, fontWeight: 600,
+            }}
+          >
+            {freshness}
+          </span>
+        </div>
+      </div>
+      <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+        {source.sourceType} · Retrieved {new Date(source.retrievedAt).toLocaleString()}
+      </div>
+    </div>
+  );
+}
+
+function SourcesTab({ companyId }: { companyId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['sources', companyId],
+    queryFn: () => api.getSources(companyId),
+  });
+
+  if (isLoading)
+    return (
+      <div className="empty-state">
+        <div className="spinner" style={{ width: 28, height: 28 }} />
+      </div>
+    );
+
+  if (!data?.sources?.length)
+    return (
+      <div className="empty-state">
+        <h3>No sources recorded</h3>
+        <p>Sources are collected during company research.</p>
+      </div>
+    );
+
+  const byAuth = data.sources.reduce<Record<string, number>>((acc, s) => {
+    acc[s.authority] = (acc[s.authority] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="card" style={{ padding: '12px 16px' }}>
+        <div className="card-title mb-3" style={{ fontSize: 13 }}>Source Coverage</div>
+        <div className="flex items-center gap-3" style={{ flexWrap: 'wrap' }}>
+          {Object.entries(byAuth).map(([auth, count]) => {
+            const a = AUTHORITY_LABELS[auth] || AUTHORITY_LABELS['unverified']!;
+            return (
+              <span key={auth} style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                <span style={{ color: a.color, fontWeight: 600 }}>{count}</span> {a.label}
+              </span>
+            );
+          })}
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+            {data.sources.length} total sources
+          </span>
+        </div>
+      </div>
+      {data.sources.map((source) => (
+        <SourceRow key={source.id} source={source} />
+      ))}
     </div>
   );
 }
@@ -622,6 +783,7 @@ export function CompanyDetailPage() {
     { key: 'people', label: 'People' },
     { key: 'outreach', label: 'Outreach' },
     { key: 'history', label: 'History' },
+    { key: 'sources', label: 'Sources' },
   ];
 
   return (
@@ -666,6 +828,7 @@ export function CompanyDetailPage() {
       {activeTab === 'people' && <PeopleTab companyId={id!} />}
       {activeTab === 'outreach' && <OutreachTab companyId={id!} />}
       {activeTab === 'history' && <HistoryTab companyId={id!} />}
+      {activeTab === 'sources' && <SourcesTab companyId={id!} />}
     </div>
   );
 }

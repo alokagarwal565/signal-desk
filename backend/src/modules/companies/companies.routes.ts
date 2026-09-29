@@ -17,6 +17,9 @@ import { getPeopleForCompany, researchPeople } from '../people/people.service.js
 import { generateOutreach, getOutreachForCompany } from '../outreach/outreach.service.js';
 import { getSnapshotsForCompany } from '../snapshots/snapshots.service.js';
 import { getChangesForCompany } from '../snapshots/changes.service.js';
+import { db } from '../../db/index.js';
+import { evidence } from '../../db/schema.js';
+import { eq, desc } from 'drizzle-orm';
 
 const addCompanySchema = z.object({
   url: z.string().min(1).max(2000),
@@ -151,6 +154,26 @@ export async function companyRoutes(app: FastifyInstance) {
     await getCompanyById(req.params.id, req.user.userId);
     const changeList = await getChangesForCompany(req.params.id);
     return { changes: changeList };
+  });
+
+  // ─── Sources ───────────────────────────────────
+
+  app.get<{ Params: { id: string } }>('/api/companies/:id/sources', async (req) => {
+    await getCompanyById(req.params.id, req.user.userId);
+    const sources = await db
+      .select({
+        id: evidence.id,
+        sourceUrl: evidence.sourceUrl,
+        sourceType: evidence.sourceType,
+        title: evidence.title,
+        authority: evidence.authority,
+        retrievedAt: evidence.retrievedAt,
+      })
+      .from(evidence)
+      .where(eq(evidence.companyId, req.params.id))
+      .orderBy(desc(evidence.retrievedAt))
+      .limit(50);
+    return { sources };
   });
 
   // ─── Refresh (re-research + change detection) ─

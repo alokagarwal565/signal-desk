@@ -104,7 +104,11 @@ export async function getDashboardToday(userId: string): Promise<DashboardItem[]
       topPerson: topPerson
         ? { name: topPerson.name, role: topPerson.role, whyRelevant: topPerson.whyRelevant }
         : null,
-      recommendedAction: opp?.whyNow ?? null,
+      // BRD §F: recommended action is distinct from "why now"
+      // Use explanation summary if available; otherwise derive from whyNow
+      recommendedAction: opp?.explanation
+        ? opp.explanation.split('\n')[0]?.slice(0, 150) ?? null
+        : opp?.whyNow ?? null,
     });
   }
 
