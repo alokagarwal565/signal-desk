@@ -140,9 +140,15 @@ Return JSON with the schema: { strategicFit, recentTrigger, growthSignal, reacha
     'generate_why_now',
   );
 
-  // Build explanation
+  const LABELS: Record<string, string> = {
+    strategicFit: 'Strategic Fit',
+    recentTrigger: 'Recent Trigger',
+    growthSignal: 'Growth Signal',
+    reachability: 'Reachability',
+    evidenceConfidence: 'Evidence Confidence',
+  };
   const explanation = Object.entries(attributes.reasoning)
-    .map(([k, v]) => `${k}: ${v}`)
+    .map(([k, v]) => `${LABELS[k] ?? k}: ${v}`)
     .join('\n');
 
   // Store

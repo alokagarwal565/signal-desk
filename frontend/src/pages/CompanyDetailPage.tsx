@@ -281,9 +281,29 @@ function OpportunityTab({ companyId }: { companyId: string }) {
       {opp.explanation && (
         <div className="card">
           <div className="card-title mb-2">Score Reasoning</div>
-          <pre style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-sans)' }}>
-            {opp.explanation}
-          </pre>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {opp.explanation.split('\n').filter(Boolean).map((line, i) => {
+              // Normalise both stored formats: "strategicFit: ..." and "Strategic Fit: ..."
+              const LABELS: Record<string, string> = {
+                strategicFit: 'Strategic Fit',
+                recentTrigger: 'Recent Trigger',
+                growthSignal: 'Growth Signal',
+                reachability: 'Reachability',
+                evidenceConfidence: 'Evidence Confidence',
+              };
+              const cleaned = line.replace(
+                /^([a-zA-Z]+):/,
+                (_, key) => `${LABELS[key] ?? key}:`,
+              );
+              const [label, ...rest] = cleaned.split(':');
+              return (
+                <div key={i} style={{ fontSize: 13, lineHeight: 1.6 }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{label}:</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{rest.join(':')}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
