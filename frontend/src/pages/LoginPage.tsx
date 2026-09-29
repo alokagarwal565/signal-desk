@@ -28,89 +28,111 @@ export function LoginPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--bg-primary)',
-    }}>
-      <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{
-            width: 56,
-            height: 56,
-            background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-            borderRadius: 'var(--radius-lg)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 22,
-            fontWeight: 700,
-            color: '#fff',
-            marginBottom: 16,
-          }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.08), transparent 70%), var(--bg-primary)',
+        padding: 24,
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <div
+            style={{
+              width: 52,
+              height: 52,
+              background: 'linear-gradient(135deg, #4f46e5, #06b6d4)',
+              borderRadius: 'var(--radius-md)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#fff',
+              marginBottom: 16,
+              boxShadow: '0 8px 24px rgba(79, 70, 229, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+            }}
+          >
             SD
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 4 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)', marginBottom: 6 }}>
             SignalDesk
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-            Know what to act on today
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13.5 }}>
+            Automated company intelligence & timing-driven opportunity ranking
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card" style={{ padding: 32 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 24 }}>
-            {isRegistering ? 'Create account' : 'Sign in'}
-          </h2>
+        <form
+          onSubmit={handleSubmit}
+          className="card"
+          style={{
+            padding: 32,
+            boxShadow: 'var(--shadow-glass)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-xl)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              {isRegistering ? 'Create Analyst Account' : 'Operator Sign In'}
+            </h2>
+            <span style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Terminal
+            </span>
+          </div>
 
           {error && (
-            <div style={{
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(248, 113, 113, 0.1)',
-              border: '1px solid rgba(248, 113, 113, 0.2)',
-              color: '#f87171',
-              fontSize: 13,
-              marginBottom: 16,
-            }}>
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                color: '#fca5a5',
+                fontSize: 13,
+                marginBottom: 16,
+              }}
+            >
               {error}
             </div>
           )}
 
           {isRegistering && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                Name
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                Full Name
               </label>
               <input
                 className="input"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder="e.g. Alex Morgan"
                 required
               />
             </div>
           )}
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
-              Email
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+              Work Email
             </label>
             <input
               className="input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="operator@signaldesk.internal"
               required
             />
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12.5, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
               Password
             </label>
             <input
@@ -124,25 +146,34 @@ export function LoginPage() {
             />
           </div>
 
-          <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%' }}>
-            {loading ? <span className="spinner" /> : (isRegistering ? 'Create account' : 'Sign in')}
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={loading}
+            style={{ width: '100%', height: 38, fontSize: 14 }}
+          >
+            {loading ? <span className="spinner" /> : isRegistering ? 'Create Account' : 'Authenticate Console'}
           </button>
 
-          <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
-            {isRegistering ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <div style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: 'var(--text-secondary)' }}>
+            {isRegistering ? 'Already have an account?' : "Don't have an operator account?"}{' '}
             <button
               type="button"
-              onClick={() => { setIsRegistering(!isRegistering); setError(''); }}
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setError('');
+              }}
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--accent-primary)',
+                color: 'var(--text-accent)',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-sans)',
                 fontSize: 13,
+                fontWeight: 600,
               }}
             >
-              {isRegistering ? 'Sign in' : 'Create one'}
+              {isRegistering ? 'Sign in' : 'Register'}
             </button>
           </div>
         </form>

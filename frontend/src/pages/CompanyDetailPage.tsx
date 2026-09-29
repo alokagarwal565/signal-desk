@@ -12,6 +12,46 @@ function scoreClass(score: number): string {
   return 'low';
 }
 
+function statusBadge(status: string) {
+  const styles: Record<string, { bg: string; text: string; border: string }> = {
+    completed: { bg: 'rgba(16, 185, 129, 0.12)', text: '#34d399', border: 'rgba(16, 185, 129, 0.25)' },
+    partial: { bg: 'rgba(245, 158, 11, 0.12)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.25)' },
+    in_progress: { bg: 'rgba(99, 102, 241, 0.12)', text: '#818cf8', border: 'rgba(99, 102, 241, 0.25)' },
+    pending: { bg: 'rgba(161, 161, 170, 0.12)', text: '#a1a1aa', border: 'rgba(161, 161, 170, 0.25)' },
+    failed: { bg: 'rgba(239, 68, 68, 0.12)', text: '#f87171', border: 'rgba(239, 68, 68, 0.25)' },
+  };
+
+  const s = styles[status] || styles.pending!;
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '3px 10px',
+        borderRadius: 'var(--radius-full)',
+        fontSize: 11,
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+        background: s.bg,
+        color: s.text,
+        border: `1px solid ${s.border}`,
+      }}
+    >
+      {status === 'in_progress' ? (
+        <span
+          className="spinner"
+          style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: s.text, borderTopColor: 'transparent' }}
+        />
+      ) : status === 'completed' ? (
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.text }} />
+      ) : null}
+      {status.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
 // ─── Research Progress ──────────────────────────
 
 function ResearchProgress({ companyId }: { companyId: string }) {
@@ -808,15 +848,35 @@ export function CompanyDetailPage() {
 
   return (
     <div>
-      <div className="page-header flex items-center justify-between">
+      <div className="page-header flex items-center justify-between" style={{ marginBottom: 24 }}>
         <div className="flex items-center gap-4">
-          <CompanyLogo domain={company.domain} name={company.name} size={52} />
+          <CompanyLogo domain={company.domain} name={company.name} size={54} />
           <div>
-            <h1>{company.name || company.domain}</h1>
-            <p>
-              {company.domain}
-              {company.industry && ` · ${company.industry}`}
-            </p>
+            <div className="flex items-center gap-3">
+              <h1 style={{ marginBottom: 0 }}>{company.name || company.domain}</h1>
+              {statusBadge(company.researchStatus)}
+            </div>
+            <div className="flex items-center gap-2 mt-1" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              <a
+                href={company.url}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: 'var(--text-accent)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                <span>{company.domain}</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
+              {company.industry && <span>· {company.industry}</span>}
+              {company.lastResearchedAt && (
+                <span style={{ color: 'var(--text-tertiary)' }}>
+                  · Updated {new Date(company.lastResearchedAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <button
@@ -824,7 +884,19 @@ export function CompanyDetailPage() {
           onClick={() => refreshMutation.mutate()}
           disabled={refreshMutation.isPending || isResearching}
         >
-          {isResearching ? 'Researching...' : 'Refresh Research'}
+          {isResearching ? (
+            <>
+              <span className="spinner" />
+              <span>Analyzing Target...</span>
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+              <span>Refresh Intelligence</span>
+            </>
+          )}
         </button>
       </div>
 

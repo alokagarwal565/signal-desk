@@ -5,14 +5,15 @@ import { api, type Company } from '../lib/api';
 import { CompanyLogo } from '../components/CompanyLogo';
 
 function statusBadge(status: string) {
-  const colors: Record<string, { bg: string; text: string }> = {
-    completed: { bg: 'rgba(52, 211, 153, 0.12)', text: '#34d399' },
-    partial: { bg: 'rgba(251, 191, 36, 0.12)', text: '#fbbf24' },
-    in_progress: { bg: 'rgba(129, 140, 248, 0.12)', text: '#818cf8' },
-    pending: { bg: 'rgba(148, 148, 168, 0.12)', text: '#9494a8' },
-    failed: { bg: 'rgba(248, 113, 113, 0.12)', text: '#f87171' },
+  const styles: Record<string, { bg: string; text: string; border: string }> = {
+    completed: { bg: 'rgba(16, 185, 129, 0.12)', text: '#34d399', border: 'rgba(16, 185, 129, 0.25)' },
+    partial: { bg: 'rgba(245, 158, 11, 0.12)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.25)' },
+    in_progress: { bg: 'rgba(99, 102, 241, 0.12)', text: '#818cf8', border: 'rgba(99, 102, 241, 0.25)' },
+    pending: { bg: 'rgba(161, 161, 170, 0.12)', text: '#a1a1aa', border: 'rgba(161, 161, 170, 0.25)' },
+    failed: { bg: 'rgba(239, 68, 68, 0.12)', text: '#f87171', border: 'rgba(239, 68, 68, 0.25)' },
   };
-  const c = colors[status] || colors.pending!;
+
+  const s = styles[status] || styles.pending!;
   return (
     <span
       style={{
@@ -25,16 +26,19 @@ function statusBadge(status: string) {
         fontWeight: 600,
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
-        background: c.bg,
-        color: c.text,
+        background: s.bg,
+        color: s.text,
+        border: `1px solid ${s.border}`,
       }}
     >
-      {status === 'in_progress' && (
+      {status === 'in_progress' ? (
         <span
           className="spinner"
-          style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: c.text, borderTopColor: 'transparent' }}
+          style={{ width: 10, height: 10, borderWidth: 1.5, borderColor: s.text, borderTopColor: 'transparent' }}
         />
-      )}
+      ) : status === 'completed' ? (
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.text }} />
+      ) : null}
       {status.replace(/_/g, ' ')}
     </span>
   );
@@ -60,7 +64,7 @@ export function CompaniesPage() {
 
   const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
 
-  // Fetch companies with auto-poll if any are in progress
+  // Fetch companies with auto-poll if any are active
   const { data, isLoading } = useQuery({
     queryKey: ['companies'],
     queryFn: api.getCompanies,
@@ -150,11 +154,11 @@ export function CompaniesPage() {
   return (
     <div>
       {/* ─── Header ─── */}
-      <div className="page-header flex items-center justify-between">
+      <div className="page-header">
         <div>
-          <h1>Companies</h1>
+          <h1>Monitored Companies</h1>
           <p>
-            {data ? `${data.companies.length} tracked ${data.companies.length === 1 ? 'company' : 'companies'}` : 'Loading...'}
+            {data ? `${data.companies.length} tracked ${data.companies.length === 1 ? 'organization' : 'organizations'} with automated web & signal discovery.` : 'Loading directory...'}
           </p>
         </div>
         <button
@@ -164,43 +168,73 @@ export function CompaniesPage() {
             setIsAddOpen(true);
           }}
         >
-          <span style={{ fontSize: 16 }}>+</span> Add Company
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add Target
         </button>
       </div>
 
-      {/* ─── Filters & Search ─── */}
+      {/* ─── Filters & Search Controls ─── */}
       <div
         className="card"
         style={{
-          padding: 16,
+          padding: '12px 18px',
           marginBottom: 20,
           display: 'flex',
           flexWrap: 'wrap',
-          gap: 12,
+          gap: 14,
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ flex: '1 1 260px', maxWidth: 400 }}>
+        <div style={{ flex: '1 1 280px', maxWidth: 420, position: 'relative' }}>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              position: 'absolute',
+              left: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-tertiary)',
+            }}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
           <input
             type="text"
             className="input"
-            placeholder="Search company, domain, or industry..."
+            placeholder="Search by company name, domain, or industry..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ padding: '8px 14px', fontSize: 13, width: '100%' }}
+            style={{ paddingLeft: 34, height: 34, fontSize: 13 }}
           />
         </div>
 
-        <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
-          {['all', 'completed', 'in_progress', 'pending', 'failed'].map((st) => (
+        {/* Apple HIG Segmented Control */}
+        <div className="segmented-control">
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'completed', label: 'Completed' },
+            { id: 'in_progress', label: 'In Progress' },
+            { id: 'pending', label: 'Pending' },
+            { id: 'failed', label: 'Failed' },
+          ].map((st) => (
             <button
-              key={st}
-              className={`btn btn-sm ${statusFilter === st ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setStatusFilter(st)}
-              style={{ textTransform: 'capitalize', whiteSpace: 'nowrap' }}
+              key={st.id}
+              className={`segmented-button ${statusFilter === st.id ? 'active' : ''}`}
+              onClick={() => setStatusFilter(st.id)}
             >
-              {st.replace(/_/g, ' ')}
+              {st.label}
             </button>
           ))}
         </div>
@@ -209,18 +243,25 @@ export function CompaniesPage() {
       {/* ─── Loading State ─── */}
       {isLoading && (
         <div className="empty-state">
-          <div className="spinner" style={{ width: 32, height: 32 }} />
+          <div className="spinner" style={{ width: 28, height: 28 }} />
+          <p className="mt-3">Loading company directory...</p>
         </div>
       )}
 
       {/* ─── Empty State ─── */}
       {data && data.companies.length === 0 && (
         <div className="empty-state">
-          <div className="empty-state-icon">🏢</div>
-          <h3>No companies yet</h3>
-          <p>Add a company website URL to start building intelligence automatically.</p>
+          <div className="empty-state-icon">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 21h18" />
+              <path d="M5 21V7l8-4v18" />
+              <path d="M19 21V11l-6-3" />
+            </svg>
+          </div>
+          <h3>No companies added yet</h3>
+          <p>Add a company website domain to trigger our AI pipeline and generate rich dossiers.</p>
           <button className="btn btn-primary mt-4" onClick={() => setIsAddOpen(true)}>
-            Add Your First Company
+            Add Your First Target
           </button>
         </div>
       )}
@@ -228,9 +269,14 @@ export function CompaniesPage() {
       {/* ─── Filtered Empty State ─── */}
       {data && data.companies.length > 0 && filteredCompanies.length === 0 && (
         <div className="empty-state">
-          <div className="empty-state-icon">🔍</div>
+          <div className="empty-state-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
           <h3>No matching companies</h3>
-          <p>Try adjusting your search query or status filter.</p>
+          <p>No results found matching "{search}" with status "{statusFilter}".</p>
         </div>
       )}
 
@@ -243,7 +289,7 @@ export function CompaniesPage() {
               className="card"
               style={{
                 cursor: 'pointer',
-                padding: '18px 24px',
+                padding: '16px 20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -253,76 +299,71 @@ export function CompaniesPage() {
               onClick={() => navigate(`/companies/${company.id}`)}
             >
               {/* Left Column: Logo + Info */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 16, overflow: 'hidden' }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
                 <CompanyLogo domain={company.domain} name={company.name} size={42} />
                 <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                   <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 16, fontWeight: 600 }}>
+                    <span style={{ fontSize: 15.5, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>
                       {company.name || company.domain}
                     </span>
-                  {company.industry && (
-                    <span
+                    {company.industry && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 500,
+                          padding: '2px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'rgba(99, 102, 241, 0.1)',
+                          border: '1px solid rgba(99, 102, 241, 0.2)',
+                          color: '#a5b4fc',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {company.industry}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 3 }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{company.domain}</span>
+                    {company.lastResearchedAt && (
+                      <span>
+                        {' '}· Updated {new Date(company.lastResearchedAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  {company.summary && (
+                    <p
                       style={{
-                        fontSize: 11,
-                        padding: '2px 8px',
-                        borderRadius: 'var(--radius-full)',
-                        background: 'rgba(129, 140, 248, 0.1)',
-                        color: 'var(--accent-primary)',
-                        whiteSpace: 'nowrap',
+                        marginTop: 6,
+                        fontSize: 12.5,
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.45,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        wordBreak: 'break-word',
                       }}
                     >
-                      {company.industry}
-                    </span>
+                      {company.summary}
+                    </p>
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                  <a
-                    href={company.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: 'var(--text-muted)', textDecoration: 'none' }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {company.domain} ↗
-                  </a>
-                  {company.lastResearchedAt && (
-                    <span>
-                      {' '}· Researched {new Date(company.lastResearchedAt).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-                {company.summary && (
-                  <p
-                    style={{
-                      marginTop: 8,
-                      fontSize: 13,
-                      color: 'var(--text-secondary)',
-                      lineHeight: 1.5,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    {company.summary}
-                  </p>
-                )}
               </div>
-            </div>
 
-            {/* Right Column: Status & Actions */}
-              <div className="flex items-center gap-3" style={{ flexShrink: 0 }}>
+              {/* Right Column: Status & macOS Actions */}
+              <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
                 {statusBadge(company.researchStatus)}
 
                 {/* Re-run Research */}
                 <button
                   className="btn-icon"
-                  title="Re-run research"
+                  title="Re-run AI research"
                   onClick={(e) => handleReResearch(e, company.id)}
                   disabled={company.researchStatus === 'in_progress'}
+                  aria-label="Re-run research"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                   </svg>
                 </button>
@@ -330,10 +371,11 @@ export function CompaniesPage() {
                 {/* Edit Details */}
                 <button
                   className="btn-icon"
-                  title="Edit company"
+                  title="Edit metadata"
                   onClick={(e) => openEditModal(e, company)}
+                  aria-label="Edit company"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                   </svg>
                 </button>
@@ -341,11 +383,12 @@ export function CompaniesPage() {
                 {/* Delete */}
                 <button
                   className="btn-icon"
-                  title="Delete company"
+                  title="Remove target"
                   style={{ color: 'var(--accent-danger)' }}
                   onClick={(e) => openDeleteModal(e, company)}
+                  aria-label="Delete company"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>
@@ -356,12 +399,12 @@ export function CompaniesPage() {
         </div>
       )}
 
-      {/* ─── Add Company Modal (Create) ─── */}
+      {/* ─── Add Company Modal (Sheet) ─── */}
       {isAddOpen && (
         <div className="modal-backdrop" onClick={() => setIsAddOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ fontSize: 16, fontWeight: 600 }}>Add Company</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 600 }}>Track New Company</h3>
               <button className="btn-icon" onClick={() => setIsAddOpen(false)}>✕</button>
             </div>
             <form
@@ -372,23 +415,23 @@ export function CompaniesPage() {
             >
               <div className="modal-body">
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6 }}>
-                    Company Website URL or Domain
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>
+                    Company Website Domain or URL
                   </label>
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. stripe.com or https://segment.com"
+                    placeholder="e.g. stripe.com or https://linear.app"
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
                     autoFocus
                   />
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                    SignalDesk will discover company pages, extract intelligence, and score opportunity.
+                  <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 6, lineHeight: 1.5 }}>
+                    SignalDesk will discover company pages, extract verified evidence, detect triggers, and score buying intent.
                   </p>
                 </div>
                 {addError && (
-                  <div style={{ padding: '8px 12px', background: 'rgba(248, 113, 113, 0.1)', color: '#f87171', borderRadius: 'var(--radius-sm)', fontSize: 13 }}>
+                  <div style={{ padding: '10px 14px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#fca5a5', borderRadius: 'var(--radius-sm)', fontSize: 13 }}>
                     {addError}
                   </div>
                 )}
@@ -398,7 +441,7 @@ export function CompaniesPage() {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={addMutation.isPending || !newUrl.trim()}>
-                  {addMutation.isPending ? 'Ingesting...' : 'Start Research'}
+                  {addMutation.isPending ? 'Ingesting Target...' : 'Start Intelligence Pipeline'}
                 </button>
               </div>
             </form>
@@ -406,12 +449,12 @@ export function CompaniesPage() {
         </div>
       )}
 
-      {/* ─── Edit Company Modal (Update) ─── */}
+      {/* ─── Edit Company Modal ─── */}
       {editingCompany && (
         <div className="modal-backdrop" onClick={() => setEditingCompany(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ fontSize: 16, fontWeight: 600 }}>Edit Company Details</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 600 }}>Edit Company Information</h3>
               <button className="btn-icon" onClick={() => setEditingCompany(null)}>✕</button>
             </div>
             <form
@@ -429,7 +472,7 @@ export function CompaniesPage() {
             >
               <div className="modal-body">
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>
                     Company Name
                   </label>
                   <input
@@ -441,8 +484,8 @@ export function CompaniesPage() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6 }}>
-                    Industry
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>
+                    Industry / Sector
                   </label>
                   <input
                     type="text"
@@ -453,13 +496,13 @@ export function CompaniesPage() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6 }}>
-                    Summary / Notes
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>
+                    Intelligence Notes / Summary
                   </label>
                   <textarea
                     className="input"
                     rows={4}
-                    placeholder="Brief description or business development notes..."
+                    placeholder="Executive description or strategic notes..."
                     value={editSummary}
                     onChange={(e) => setEditSummary(e.target.value)}
                     style={{ resize: 'vertical' }}
@@ -479,27 +522,27 @@ export function CompaniesPage() {
         </div>
       )}
 
-      {/* ─── Delete Confirmation Modal (Delete) ─── */}
+      {/* ─── Delete Confirmation Modal ─── */}
       {deletingCompany && (
         <div className="modal-backdrop" onClick={() => setDeletingCompany(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
             <div className="modal-header">
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--accent-danger)' }}>
-                Delete Company
+              <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--accent-danger)' }}>
+                Delete Target Company
               </h3>
               <button className="btn-icon" onClick={() => setDeletingCompany(null)}>✕</button>
             </div>
             <div className="modal-body">
-              <p style={{ fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                Are you sure you want to delete <strong>{deletingCompany.name || deletingCompany.domain}</strong>?
+              <p style={{ fontSize: 13.5, color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                Are you sure you want to permanently delete <strong>{deletingCompany.name || deletingCompany.domain}</strong>?
               </p>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                This will permanently remove the company, all associated research evidence, intelligence, signals, opportunity scores, and outreach drafts.
+              <p style={{ fontSize: 12.5, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                This action is irreversible. All crawled evidence sources, signals, opportunity scores, and tailored outreach drafts will be deleted.
               </p>
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={() => setDeletingCompany(null)}>
-                Cancel
+                Keep Company
               </button>
               <button
                 type="button"
@@ -507,7 +550,7 @@ export function CompaniesPage() {
                 disabled={deleteMutation.isPending}
                 onClick={() => deleteMutation.mutate(deletingCompany.id)}
               >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete Company'}
+                {deleteMutation.isPending ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>
