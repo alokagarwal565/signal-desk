@@ -31,3 +31,7 @@ Thumbs.db
 # Temporary
 scratch/
 tmp/
+
+# Agents and Skills
+.agents/
+agents/
