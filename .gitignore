@@ -31,7 +31,9 @@ Thumbs.db
 # Temporary
 scratch/
 tmp/
+.vercel/
 
 # Agents and Skills
 .agents/
 agents/
+
