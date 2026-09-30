@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { api, type DashboardItem } from '../lib/api';
 import { CompanyLogo } from '../components/CompanyLogo';
+import { MetricsGridSkeleton, OpportunityCardSkeleton } from '../components/Skeleton';
 
 function scoreClass(score: number): string {
   if (score >= 70) return 'high';
@@ -311,7 +312,7 @@ export function DashboardPage() {
     refetchInterval: 30_000,
   });
 
-  const { data: metricsData } = useQuery({
+  const { data: metricsData, isLoading: isMetricsLoading } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: api.getDashboardMetrics,
     refetchInterval: 60_000,
@@ -329,7 +330,7 @@ export function DashboardPage() {
       </div>
 
       {/* Executive Metrics Summary Bar */}
-      {m && (
+      {m ? (
         <div className="metrics-strip">
           <div className="metric-card">
             <span className="metric-label">Monitored Targets</span>
@@ -375,12 +376,15 @@ export function DashboardPage() {
             </div>
           </div>
         </div>
-      )}
+      ) : isMetricsLoading ? (
+        <MetricsGridSkeleton />
+      ) : null}
 
       {isLoading && (
-        <div className="empty-state">
-          <div className="spinner" style={{ width: 28, height: 28 }} />
-          <p className="mt-3">Analyzing real-time signals & ranking opportunities...</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <OpportunityCardSkeleton />
+          <OpportunityCardSkeleton />
+          <OpportunityCardSkeleton />
         </div>
       )}
 

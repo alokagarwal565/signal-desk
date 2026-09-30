@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type Person, type Source } from '../lib/api';
 import { CompanyLogo } from '../components/CompanyLogo';
+import { CompanyDetailSkeleton, TabContentSkeleton } from '../components/Skeleton';
 
 type Tab = 'overview' | 'signals' | 'opportunity' | 'people' | 'outreach' | 'history' | 'sources';
 
@@ -230,11 +231,12 @@ function OverviewTab({ companyId }: { companyId: string }) {
 // ─── Signals Tab ────────────────────────────────
 
 function SignalsTab({ companyId }: { companyId: string }) {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['signals', companyId],
     queryFn: () => api.getSignals(companyId),
   });
 
+  if (isLoading) return <TabContentSkeleton cards={3} />;
   if (!data?.signals?.length) return <div className="empty-state"><h3>No signals detected</h3><p>Signals are identified during research.</p></div>;
 
   return (
@@ -376,6 +378,8 @@ function PeopleTab({ companyId }: { companyId: string }) {
           {researchMutation.isPending ? <><span className="spinner" /> Finding people...</> : 'Find People'}
         </button>
       </div>
+
+      {isLoading && <TabContentSkeleton cards={2} />}
 
       {(!data?.people?.length && !isLoading) && (
         <div className="empty-state">
@@ -546,12 +550,7 @@ function OutreachTab({ companyId }: { companyId: string }) {
         </button>
       </div>
 
-      {isLoading && (
-        <div className="empty-state">
-          <div className="spinner" style={{ width: 28, height: 28 }} />
-          <p className="mt-2 text-sm text-muted">Loading outreach drafts...</p>
-        </div>
-      )}
+      {isLoading && <TabContentSkeleton cards={1} />}
 
       {!isLoading && !draft && !mutation.isPending && (
         <div className="empty-state">
@@ -676,12 +675,7 @@ function SourcesTab({ companyId }: { companyId: string }) {
     queryFn: () => api.getSources(companyId),
   });
 
-  if (isLoading)
-    return (
-      <div className="empty-state">
-        <div className="spinner" style={{ width: 28, height: 28 }} />
-      </div>
-    );
+  if (isLoading) return <TabContentSkeleton cards={3} />;
 
   if (!data?.sources?.length)
     return (
@@ -724,14 +718,18 @@ function SourcesTab({ companyId }: { companyId: string }) {
 // ─── History Tab ────────────────────────────────
 
 function HistoryTab({ companyId }: { companyId: string }) {
-  const { data: snapshotsData } = useQuery({
+  const { data: snapshotsData, isLoading: isSnapshotsLoading } = useQuery({
     queryKey: ['snapshots', companyId],
     queryFn: () => api.getSnapshots(companyId),
   });
-  const { data: changesData } = useQuery({
+  const { data: changesData, isLoading: isChangesLoading } = useQuery({
     queryKey: ['changes', companyId],
     queryFn: () => api.getChanges(companyId),
   });
+
+  if (isSnapshotsLoading && isChangesLoading) {
+    return <TabContentSkeleton cards={2} />;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -830,7 +828,7 @@ export function CompanyDetailPage() {
     },
   });
 
-  if (isLoading) return <div className="empty-state"><div className="spinner" style={{ width: 32, height: 32 }} /></div>;
+  if (isLoading) return <CompanyDetailSkeleton />;
   if (!data?.company) return <div className="empty-state"><h3>Company not found</h3></div>;
 
   const company = data.company;

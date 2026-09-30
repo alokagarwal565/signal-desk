@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api, type Company } from '../lib/api';
 import { CompanyLogo } from '../components/CompanyLogo';
+import { CompaniesDirectorySkeleton } from '../components/Skeleton';
 
 function statusBadge(status: string) {
   const styles: Record<string, { bg: string; text: string; border: string }> = {
@@ -451,12 +452,7 @@ export function CompaniesPage() {
       </div>
 
       {/* ─── Loading State ─── */}
-      {isLoading && (
-        <div className="empty-state">
-          <div className="spinner" style={{ width: 28, height: 28 }} />
-          <p className="mt-3">Loading company directory...</p>
-        </div>
-      )}
+      {isLoading && <CompaniesDirectorySkeleton />}
 
       {/* ─── Zero State (No Companies in Database) ─── */}
       {data && data.companies.length === 0 && (
