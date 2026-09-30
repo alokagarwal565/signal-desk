@@ -44,6 +44,188 @@ function statusBadge(status: string) {
   );
 }
 
+function FilteredEmptyState({
+  search,
+  statusFilter,
+  totalCompanies,
+  onClearSearch,
+  onResetStatus,
+  onOpenAdd,
+}: {
+  search: string;
+  statusFilter: string;
+  totalCompanies: number;
+  onClearSearch: () => void;
+  onResetStatus: () => void;
+  onOpenAdd: () => void;
+}) {
+  const isSearchActive = search.trim().length > 0;
+  const isStatusActive = statusFilter !== 'all';
+
+  const statusNames: Record<string, string> = {
+    all: 'All',
+    completed: 'Completed',
+    in_progress: 'In Progress',
+    pending: 'Pending',
+    failed: 'Failed',
+  };
+  const statusName = statusNames[statusFilter] || statusFilter;
+
+  // Scenario 1: Search query was entered
+  if (isSearchActive) {
+    return (
+      <div className="empty-state-card">
+        <div className="empty-state-badge tint-indigo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </div>
+        <div className="empty-state-title">No results for &ldquo;{search.trim()}&rdquo;</div>
+        <div className="empty-state-desc">
+          {isStatusActive
+            ? `No organizations match this keyword under the “${statusName}” filter. Try adjusting your query or resetting the filter.`
+            : 'Check for spelling mistakes, or search by a different company name, domain, or industry sector.'}
+        </div>
+        <div className="empty-state-actions">
+          <button className="btn btn-secondary btn-sm" onClick={onClearSearch}>
+            Clear Search
+          </button>
+          {isStatusActive && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                onClearSearch();
+                onResetStatus();
+              }}
+            >
+              Reset All Filters
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Scenario 2: Specific status filter active (In Progress, Pending, Failed, Completed)
+  if (statusFilter === 'in_progress') {
+    return (
+      <div className="empty-state-card">
+        <div className="empty-state-badge tint-indigo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+          </svg>
+        </div>
+        <div className="empty-state-title">No research currently in progress</div>
+        <div className="empty-state-desc">
+          There are no active web scraping or intelligence pipelines running. You can initiate research by adding a target or re-running an existing company.
+        </div>
+        <div className="empty-state-actions">
+          <button className="btn btn-secondary btn-sm" onClick={onResetStatus}>
+            Show All Companies ({totalCompanies})
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={onOpenAdd}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Track New Target
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (statusFilter === 'pending') {
+    return (
+      <div className="empty-state-card">
+        <div className="empty-state-badge tint-amber">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </div>
+        <div className="empty-state-title">No pending research tasks</div>
+        <div className="empty-state-desc">
+          All organizations in your workspace queue have been analyzed. No jobs are currently awaiting processing.
+        </div>
+        <div className="empty-state-actions">
+          <button className="btn btn-secondary btn-sm" onClick={onResetStatus}>
+            Show All Companies ({totalCompanies})
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (statusFilter === 'failed') {
+    return (
+      <div className="empty-state-card">
+        <div className="empty-state-badge tint-emerald">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <polyline points="9 12 11 14 15 10" />
+          </svg>
+        </div>
+        <div className="empty-state-title">No failed research runs</div>
+        <div className="empty-state-desc">
+          All intelligence extraction runs completed cleanly without any unreachable domains or scraping failures.
+        </div>
+        <div className="empty-state-actions">
+          <button className="btn btn-secondary btn-sm" onClick={onResetStatus}>
+            Show All Companies ({totalCompanies})
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (statusFilter === 'completed') {
+    return (
+      <div className="empty-state-card">
+        <div className="empty-state-badge">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+        </div>
+        <div className="empty-state-title">No completed research yet</div>
+        <div className="empty-state-desc">
+          None of your tracked organizations have finished the full analysis pipeline yet.
+        </div>
+        <div className="empty-state-actions">
+          <button className="btn btn-secondary btn-sm" onClick={onResetStatus}>
+            Show All Companies ({totalCompanies})
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback
+  return (
+    <div className="empty-state-card">
+      <div className="empty-state-badge">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </div>
+      <div className="empty-state-title">No matching companies</div>
+      <div className="empty-state-desc">
+        No companies found with status “{statusName}”.
+      </div>
+      <div className="empty-state-actions">
+        <button className="btn btn-secondary btn-sm" onClick={onResetStatus}>
+          Show All Companies ({totalCompanies})
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CompaniesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -216,8 +398,36 @@ export function CompaniesPage() {
             placeholder="Search by company name, domain, or industry..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: 34, height: 34, fontSize: 13 }}
+            style={{ paddingLeft: 34, paddingRight: search ? 32 : 12, height: 34, fontSize: 13 }}
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              style={{
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: 'none',
+                color: 'var(--text-tertiary)',
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 10,
+                lineHeight: 1,
+              }}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {/* Apple HIG Segmented Control */}
@@ -248,36 +458,45 @@ export function CompaniesPage() {
         </div>
       )}
 
-      {/* ─── Empty State ─── */}
+      {/* ─── Zero State (No Companies in Database) ─── */}
       {data && data.companies.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-state-icon">
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <div className="empty-state-card">
+          <div className="empty-state-badge tint-indigo">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 21h18" />
               <path d="M5 21V7l8-4v18" />
               <path d="M19 21V11l-6-3" />
             </svg>
           </div>
-          <h3>No companies added yet</h3>
-          <p>Add a company website domain to trigger our AI pipeline and generate rich dossiers.</p>
-          <button className="btn btn-primary mt-4" onClick={() => setIsAddOpen(true)}>
-            Add Your First Target
-          </button>
+          <div className="empty-state-title">No companies added yet</div>
+          <div className="empty-state-desc">
+            Add a company website domain to launch our automated AI pipeline and generate rich executive intelligence dossiers.
+          </div>
+          <div className="empty-state-actions">
+            <button className="btn btn-primary" onClick={() => setIsAddOpen(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Your First Target
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ─── Filtered Empty State ─── */}
+      {/* ─── Filtered Empty State (Search or Status Filter has no matches) ─── */}
       {data && data.companies.length > 0 && filteredCompanies.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-state-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </div>
-          <h3>No matching companies</h3>
-          <p>No results found matching "{search}" with status "{statusFilter}".</p>
-        </div>
+        <FilteredEmptyState
+          search={search}
+          statusFilter={statusFilter}
+          totalCompanies={data.companies.length}
+          onClearSearch={() => setSearch('')}
+          onResetStatus={() => setStatusFilter('all')}
+          onOpenAdd={() => {
+            setAddError(null);
+            setIsAddOpen(true);
+          }}
+        />
       )}
 
       {/* ─── Company Rows ─── */}
