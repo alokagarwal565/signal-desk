@@ -17,7 +17,7 @@ const app = Fastify({ logger: false });
 // ─── Plugins ──────────────────────────────────────
 
 await app.register(cors, {
-  origin: config.env === 'production' ? false : true,
+  origin: true,
   credentials: true,
 });
 
